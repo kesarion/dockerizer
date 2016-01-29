@@ -1,0 +1,34 @@
+{
+  "name": "dockerizer",
+  "version": "0.1.0",
+  "dependencies": {
+    "co": "^4.6.0",
+    "request": "^2.67.0",
+    "simple-archiver": "^0.1.1"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "mocha": "^2.3.4"
+  },
+  "scripts": {
+    "test": "NODE_ENV=test ./node_modules/.bin/mocha $(find test -name '*.spec.js')",
+    "test-dev": "NODE_ENV=test-dev ./node_modules/.bin/mocha $(find test -name '*.spec.js')"
+  },
+  "main": "index.js",
+  "repository": "kesarion/dockerizer",
+  "description": "Docker client - Dockerize a node app with one call",
+  "homepage": "https://github.com/kesarion/dockerizer",
+  "icon": "",
+  "keywords": [
+    "docker",
+    "client",
+    "dockerize",
+    "node",
+    "automation"
+  ],
+  "author": {
+    "name": "Alexandru Sfirlogea",
+    "email": "alexandru.sfirlogea@gmail.com"
+  },
+  "license": "MIT"
+}
