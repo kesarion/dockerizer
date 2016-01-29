@@ -16,7 +16,7 @@
   },
   "main": "index.js",
   "repository": "kesarion/dockerizer",
-  "description": "Docker client - Dockerize a node app with one call",
+  "description": "Docker client and programmatic dockerizer",
   "homepage": "https://github.com/kesarion/dockerizer",
   "icon": "",
   "keywords": [
