@@ -45,17 +45,25 @@ class Docker
      * Dockerize an app
      *
      * @param {(String|Buffer|Stream)} app - The app path (String) or code (String|Buffer) or Stream
+     *
      * @param {Object} [options] - Options
-     * @param {String} [options.name=app-{timestamp}] - Name of the container; The image name will be {options.name}-image
-     * @param {String} [options.port=3000] - The container port; The app should run on port 8080 inside the container since that will be bound to this port; 3000 by default
+     * @param {String} [options.name=app-${timestamp}] - Container name; `app-${timestamp}` by default; Note: The image name will be `${options.name}-image`;
+     *
+     * @param {String} [options.port=3000] - The host port for the container; '3000' by default;
+     * Note: The app should run on port 8080 inside the container since that will be bound to this port;
+     *
      * @param {String} [options.dockerfile=DOCKERFILE] - Dockerfile as a utf8 string; By default, the DOCKERFILE constant is used
-     * @param {Boolean} [options.start=true] - Start the container after creation; true by default
-     * @param {Object} [options.container={ Image: `${name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: options.port }]}}}] - Container configuration;
+     *
+     * @param {String} [options.package] - package.json; Use it for dependencies (e.g. options.package='{ "dependencies": { "express": "*" } }';);
+     * For code given as a string\buffer\stream\file path that requires a package.json; Do not set this if app is a path to a directory (create a package.json there);
+     *
+     * @param {Boolean} [options.start=true] - Start the container after creation; true by default;
+     * Note: Regardless of who starts the container, after issuing the start command you need to wait until it's actually started and functional before you do anything with it;
+     *
+     * @param {Object} [options.container={ Image: `${container_name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: '3000' }]}}}] - Container configuration;
      * By default, it sets the image to be used and the port bindings (set above) in the host configuration;
      * For more configuration options, see {@link https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#create-a-container};
      * If you set options.container, you must re-specify the image and port (as shown above);
-     * @param {String} [options.package] - package.json; Use it for dependencies (e.g. options.package='{ "dependencies": { "express": "*" } }';);
-     * For code given as a string\buffer\stream\file path that requires a package.json; Do not set this if app is a path to a directory (create a package.json there);
      *
      * @returns {Promise<String>} - A Promise that returns the container's ID on success
      */
@@ -75,8 +83,7 @@ class Docker
 
             let type = 'stream';
             if (util.isString(app)) {
-                type = 'string';
-                try { type = fs.statSync(entry.data).isDirectory() ? 'directory' : 'file'; } catch (e) {} // error if not path
+                type = (yield new Promise(resolve => fs.stat(app, (err, stats) => resolve(err ? false : (stats.isDirectory() ? 'directory' : 'file'))))) || 'string';
             } else if (util.isBuffer(app)) {
                 type = 'buffer';
             }
@@ -92,17 +99,17 @@ class Docker
             let dockerball = yield archive(entries, { format: 'tar' });
 
             // Create an image
-            let result = yield self.request(`/build?t=${name}-image`, { method: 'POST', json: false, headers: { "Content-type": "application/tar" }, body: dockerball });
+            yield self.request(`/build?t=${name}-image`, { method: 'POST', json: false, headers: { "Content-type": "application/tar" }, body: dockerball });
 
             // Create a container
-            let config = options.container || { Image: `${name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: options.port || '3000' }]}}};
+            let config = options.container || { Image: `${name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: (options.port || '3000') + '' }]}}};
             let container = yield self.request(`/containers/create?name=${name}`, { method: 'POST', body: config });
 
-            // Create a container
             // Start the container
             if (options.start !== false) {
-                yield self.request(`/containers/${container.Id}/start`, { method: 'POST', result: true });
-                yield new Promise(resolve => setTimeout(resolve, 1000)); // some time to make sure the connection is enabled
+                yield self.request(`/containers/${container.Id}/start`, { method: 'POST' });
+                // timeout to make sure the connection is enabled; this doesn't guarantee anything; in a production environment you need to check the connection before using it
+                yield new Promise(resolve => setTimeout(resolve, 1000));
             }
 
             return container.Id;

@@ -11,16 +11,15 @@ var request = require('request');
 // Project
 var Docker = require('..');
 
-var env = process.env.NODE_ENV;
-
-var docker = new Docker(env !== 'test' ? {
+// OSX (in comments) vs Linux testing URI settings
+var docker = new Docker(/*{
     uri: "https://192.168.99.100:2376",
     cert: fs.readFileSync("/Users/alex/.docker/machine/certs/cert.pem"),
     key: fs.readFileSync("/Users/alex/.docker/machine/certs/key.pem"),
     ca: fs.readFileSync("/Users/alex/.docker/machine/certs/ca.pem")
-} : { uri: "http://unix:/var/run/docker.sock:"});
+} || */{ uri: "http://unix:/var/run/docker.sock:" });
 
-const APP_URI = env !== 'test' ? 'http://192.168.99.100' : 'http://localhost';
+const APP_URI = /*'http://192.168.99.100' || */'http://localhost';
 
 const APP = __dirname + '/resources/app';
 
@@ -39,7 +38,7 @@ describe('Docker', function () {
             { type: 'buffer',    value: promisify(fs.readFile, [`${APP}/index.js`]), package: package_json },
             { type: 'stream',    value: Promise.resolve(fs.createReadStream(`${APP}/index.js`)), package: package_json },
             { type: 'file',      value: Promise.resolve(`${APP}/index.js`), package: package_json },
-            { type: 'directory', value: Promise.resolve(APP) }
+            { type: 'directory', value: Promise.resolve(APP), package: Promise.resolve() }
         ];
 
         for (let input of inputs) {
@@ -50,13 +49,24 @@ describe('Docker', function () {
             }));
         }
 
-        //it('should dockerize a string', () => co(function *() {
-        //    yield docker.dockerize(yield app, { package: yield package_json });
-        //    let result = yield promisify(request, ['http://localhost:3000']);
-        //    expect(result.body).to.equal('Hello world');
-        //}));
-
-
+        it('should work with any supported option', () => co(function *() {
+            let port = 45678;
+            let portExposed = '7070';
+            let options = {
+                name: 'my-container',
+                port: port,
+                dockerfile: `FROM tatsushid/tinycore-node:4.2\nCOPY /app /app\nRUN cd /app; npm install\nEXPOSE  ${portExposed}\nCMD ["node", "/app"]`,
+                package: yield package_json,
+                start: false,
+                container: { Image: 'my-container-image', HostConfig: { PortBindings: { '7070/tcp': [{ HostPort: `${port}` }]}}}
+            };
+            let id = yield docker.dockerize((yield app).replace('8080', portExposed), options);
+            expect(yield docker.request('/containers/json')).to.be.empty; // no running containers
+            yield docker.request(`/containers/${id}/start`, { method: 'POST' });
+            yield new Promise(resolve => setTimeout(resolve, 1000)); // wait a sec
+            let result = yield promisify(request, [`${APP_URI}:${port}`]);
+            expect(result.body).to.equal('Hello world');
+        }));
     });
 });
 
