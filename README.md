@@ -1,4 +1,7 @@
 # dockerizer
+
+[![Build Status](https://travis-ci.org/kesarion/dockerizer.svg?branch=master)](https://travis-ci.org/kesarion/dockerizer)
+
 Docker client and programmatic dockerizer
 
 ## Install
