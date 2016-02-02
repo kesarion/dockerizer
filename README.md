@@ -48,10 +48,10 @@ function promisify (fun, args) {
 
 The following dockerfile is provided by default:
 
-> FROM tatsushid/tinycore-node:4.2
-> COPY /app /app
-> RUN cd /app; npm install
-> EXPOSE  8080
+> FROM tatsushid/tinycore-node:4.2 \
+> COPY /app /app \
+> RUN cd /app; npm install \
+> EXPOSE  8080 \
 > CMD ["node", "/app"]
 
 You can provide your own dockerfile:
