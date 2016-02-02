@@ -78,8 +78,7 @@ class Docker
             // If no custom Dockerfile is provided, use default
             let dockerfile = options.dockerfile || DOCKERFILE;
 
-            // dockerball entries
-            let entries = [{ data: dockerfile, type: 'string', name: 'Dockerfile' }];
+            let entries = [];
 
             let type = 'stream';
             if (util.isString(app)) {
@@ -96,7 +95,7 @@ class Docker
             }
 
             // docker(file tar)ball
-            let dockerball = yield archive(entries, { format: 'tar' });
+            let dockerball = yield self.dockerball(dockerfile, entries);
 
             // Create an image
             yield self.request(`/build?t=${name}-image`, { method: 'POST', json: false, headers: { "Content-type": "application/tar" }, body: dockerball });
@@ -141,6 +140,22 @@ class Docker
 
             request(options, (err, res) => (err ? reject(err) : resolve(options.result ? res : res.body)));
         });
+    }
+
+    /**
+     * Make a request to docker
+     *
+     * @param {String} dockerfile - Dockerfile as a string
+     * @param {Object[]} [entries] - Entries array (paths, buffers, streams or strings)
+     *
+     * @returns {Promise<Buffer>}
+     */
+    dockerball (dockerfile, entries)
+    {
+        if (!entries) entries = [];
+        entries.push({ data: dockerfile, type: 'string', name: 'Dockerfile' });
+
+        return archive(entries, { format: 'tar' });
     }
 }
 
