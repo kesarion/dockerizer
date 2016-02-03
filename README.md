@@ -48,11 +48,13 @@ function promisify (fun, args) {
 
 The following dockerfile is provided by default:
 
-> FROM tatsushid/tinycore-node:4.2 \
-> COPY /app /app \
-> RUN cd /app; npm install \
-> EXPOSE  8080 \
-> CMD ["node", "/app"]
+```
+FROM tatsushid/tinycore-node:4.2
+COPY /app /app
+RUN cd /app; npm install
+EXPOSE  8080
+CMD ["node", "/app"]
+```
 
 You can provide your own dockerfile:
 ```javascript
@@ -115,10 +117,80 @@ let docker = new Docker({
 ```
 Replace the IP with the one for your docker machine and the user name with yours for the certificates.
 
+## Dockerizer
 
+### constructor(options)
+=> Object
 
+#### `options`
+Object
 
-## To do
+Object properties:
+- `uri` - The Docker Remote API URI (e.g. the unix socket for docker on linux: `http://unix:/var/run/docker.sock:` - don't forget the trailing ':')
 
-- Documentation details
+`options` acts as a permanent set of [request](https://github.com/request/request) [options](https://github.com/request/request#requestoptions-callback) for every request sent from the object. This would be a good place to set [certificates](https://github.com/request/request#tlsssl-protocol) for https.
+
+Properties set in the constructor options *overwrite* properties set in the request options, so be careful.
+
+### dockerize (app, options)
+=> Promise
+
+Resolves with the container ID.
+
+#### `app`
+String | Buffer | Stream
+
+`app` can be a path (String) to a directory/file or code given as a String, Buffer or Stream. Aside from directory, every other case (excepting custom dockerfile projects) will likely require a package json set through `options.package`.
+
+#### `options`
+(Optional) Object
+
+Object properties:
+
+- `name` - Container name; `app-${timestamp}` by default; Note: The image name will be `${options.name}-image`;
+- `port` - The host port for the container; '3000' by default;
+- `dockerfile` - Dockerizer fully supports BYOD; must be a String;
+- `package` - package.json; Use it for dependencies (e.g. options.package='{ "dependencies": { "express": "*" } }';); For code given as a string\buffer\stream\file path that requires a package.json; Do not set this if app is a path to a directory (create a package.json there instead);
+- `start` - Start the container after creation; true by default; Note: Regardless of who starts the container, after issuing the start command you should to wait until it's actually started and functional before you do anything with it;
+- `container` - Container configuration; By default, it sets the image to be used and the port bindings in the host configuration; default: ``{ Image: `${container_name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: '3000' }]}}}``; For more configuration options, see docker [create a container](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#create-a-container); If you set options.container, you must re-specify the image and port (as you desire);
+
+### request(path, options)
+=> Promise
+
+Resolves to the response body by default (can be changed to return the full response).
+
+#### `path`
+String
+
+Represents the [Docker Remote API Endpoint](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#2-endpoints) to send the request to.
+
+#### `options`
+(Optional) Object
+
+Same as [options](https://github.com/request/request#requestoptions-callback) from the [request/request](https://github.com/request/request) package.
+
+- `options.method`  is `GET` by default, same as  `request/request`; other methods need to be specified;
+- `options.encoding` is utf8 by default, same as `request/request`;
+- `options.json` is true by default; if you don't want the content type to be set to JSON and/or the body automatically parsed, specify it as false; this is different from `request/request` due to the more common usage of json as true throughout this project;
+- `options.result` if set to true, `request`'s promise will resolve to the full response as opposed to just the body; this is an extra due to the more common usage of body throughout this project;
+
+### dockerball(dockerfile, entries)
+=> Promise
+
+Resolves to a tarball Buffer.
+
+#### `dockerfile`
+String
+
+The `Dockerfile` string to include as a file in the tarball.
+
+#### `entries`
+(Optional) Array
+
+An array of path strings (files/directories) to include in the tarball (e.g. `'/path/to/my/app'`).
+
+Can also contain Strings, Buffers and Streams, described through [objects](https://github.com/kesarion/simple-archiver#--entries) (e.g. `{ data: buffer, type: 'buffer', name: 'myfile.txt' }`).
+
+## Planned
+
 - Docker management & statistics
