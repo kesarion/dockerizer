@@ -76,7 +76,7 @@ docker.request(path, options) supports any [request](https://github.com/request/
 
 ###  Docker [images](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#2-2-images)
 
-In order to create a docker image you'll need a tarball containing at least a dockerfile at it's root. Dockerizer provides a helpful function `dockerball(dockerfile, entries)` that gives us just what we need. `dockerfile` should be a string; `entries` is optional and can be an array of paths you wish to include in the archive (also buffers, streams and strings - explained in detail later).
+In order to create a docker image we'll need a tarball containing at least a dockerfile at it's root. Dockerizer provides a helpful function `dockerball(dockerfile, entries)` that gives us just what we need. `dockerfile` should be a string; `entries` is optional and can be an array of file/directory paths you wish to include in the archive.
 
 ```javascript
 // A docker(file tar)ball buffer
@@ -101,11 +101,11 @@ yield docker.request(`/containers/${container.Id}/start`, { method: 'POST' });
 
 yield new Promise(resolve => setTimeout(resolve, 1000));
 ```
-We set a timeout to make sure the connection is enabled before we use it. This doesn't guarantee anything, in a production environment you need to check the connection before using it, but it's good enough for development.
+We set a timeout to make sure the connection is enabled before we use it. This is good enough for development, but it doesn't guarantee anything; in a production environment you need to check the connection before using it.
 
 ## Docker on OSX
 
-On Linux, things are pretty straightforward with the unix socket uri. On OSX, you need to install the docker toolbox and make sure the default docker machine is running `docker-machine start default` then get the machine IP `docker-machine ip default` and use it along with the proper certificates:
+After installing the docker toolbox and making sure the default docker machine is running `docker-machine start default`, get the machine IP `docker-machine ip default` and use it with the proper certificates:
 
 ```javascript
 let docker = new Docker({
@@ -128,9 +128,9 @@ Object
 Object properties:
 - `uri` - The Docker Remote API URI (e.g. the unix socket for docker on linux: `http://unix:/var/run/docker.sock:` - don't forget the trailing ':')
 
-`options` acts as a permanent set of [request](https://github.com/request/request) [options](https://github.com/request/request#requestoptions-callback) for every request sent from the object. This would be a good place to set [certificates](https://github.com/request/request#tlsssl-protocol) for https.
+`options` acts as a permanent set of [request](https://github.com/request/request) [options](https://github.com/request/request#requestoptions-callback) for every request sent from the object. This is a good place to set [certificates](https://github.com/request/request#tlsssl-protocol) for https.
 
-Properties set in the constructor options *overwrite* properties set in the request options, so be careful.
+Properties set in the constructor options *overwrite* properties set in the request options, so be careful what you set here.
 
 ### dockerize (app, options)
 => Promise
@@ -149,10 +149,10 @@ Object properties:
 
 - `name` - Container name; `app-${timestamp}` by default; Note: The image name will be `${options.name}-image`;
 - `port` - The host port for the container; '3000' by default;
-- `dockerfile` - Dockerizer fully supports BYOD; must be a String;
+- `dockerfile` - Custom Dockerfile as a string;
 - `package` - package.json; Use it for dependencies (e.g. options.package='{ "dependencies": { "express": "*" } }';); For code given as a string\buffer\stream\file path that requires a package.json; Do not set this if app is a path to a directory (create a package.json there instead);
 - `start` - Start the container after creation; true by default; Note: Regardless of who starts the container, after issuing the start command you should to wait until it's actually started and functional before you do anything with it;
-- `container` - Container configuration; By default, it sets the image to be used and the port bindings in the host configuration; default: ``{ Image: `${container_name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: '3000' }]}}}``; For more configuration options, see docker [create a container](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#create-a-container); If you set options.container, you must re-specify the image and port (as you desire);
+- `container` - Container configuration; By default, it sets the image to be used and the port bindings in the host configuration; default: ``{ Image: `${container_name}-image`, HostConfig: { PortBindings: { '8080/tcp': [{ HostPort: '3000' }]}}}``; For more configuration options, see docker's [create a container](https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#create-a-container); If you set options.container, you must re-specify the image and port (if you need them);
 
 ### request(path, options)
 => Promise
