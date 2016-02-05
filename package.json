@@ -1,6 +1,6 @@
 {
   "name": "dockerizer",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "dependencies": {
     "co": "^4.6.0",
     "request": "^2.67.0",
