@@ -1,11 +1,11 @@
 "use strict";
 
-var fs       = require('fs');
-var util     = require('util');
+const fs = require('fs');
+const util = require('util');
 
-var co       = require('co');
-var request  = require('request');
-var archive  = require('simple-archiver').archive;
+const co = require('co');
+const request = require('request');
+const archive = require('simple-archiver').archive;
 
 const DOCKERFILE =
 `FROM tatsushid/tinycore-node:4.2
@@ -152,7 +152,10 @@ class Docker
      */
     dockerball (dockerfile, entries)
     {
-        if (!entries) entries = [];
+        if (!entries) {
+            entries = [];
+        }
+
         entries.push({ data: dockerfile, type: 'string', name: 'Dockerfile' });
 
         return archive(entries, { format: 'tar' });

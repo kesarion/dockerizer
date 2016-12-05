@@ -1,25 +1,25 @@
 "use strict";
 
 // node
-var fs = require('fs');
+const fs = require('fs');
 
 // npm
-var expect = require('chai').expect;
-var co = require('co');
-var request = require('request');
+const expect = require('chai').expect;
+const co = require('co');
+const request = require('request');
 
 // Project
-var Docker = require('..');
+const Docker = require('..');
 
-// OSX (in comments) vs Linux testing URI settings
-var docker = new Docker(/*{
+// Linux & OSX (in comments) testing URI settings
+const docker = new Docker({ uri: "http://unix:/var/run/docker.sock:" }/*{
     uri: "https://192.168.99.100:2376",
     cert: fs.readFileSync("/Users/alex/.docker/machine/certs/cert.pem"),
     key: fs.readFileSync("/Users/alex/.docker/machine/certs/key.pem"),
     ca: fs.readFileSync("/Users/alex/.docker/machine/certs/ca.pem")
-} || */{ uri: "http://unix:/var/run/docker.sock:" });
+}*/);
 
-const APP_URI = /*'http://192.168.99.100' || */'http://localhost';
+const APP_URI = 'http://localhost' /*'http://192.168.99.100'*/;
 
 const APP = __dirname + '/resources/app';
 
